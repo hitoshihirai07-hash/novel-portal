@@ -213,12 +213,14 @@ async function load(){
   }
 }
 
-qs("#saveKeyBtn").addEventListener("click", ()=>{ setEditKey(qs("#editKey").value.trim()); syncKeyUI(); load(); });
-qs("#clearKeyBtn").addEventListener("click", ()=>{ setEditKey(""); syncKeyUI(); render([]); });
+qs("#saveKeyBtn").addEventListener("click", ()=>{ setEditKey(qs("#editKey").value.trim()); syncKeyUI(); load(); loadProfile(); });
+qs("#clearKeyBtn").addEventListener("click", ()=>{ setEditKey(""); syncKeyUI(); render([]); showMsg("#profileMsg","",false); qs("#profileViewBtn").href="#"; });
 qs("#searchBtn").addEventListener("click", load);
 qs("#clearBtn").addEventListener("click", ()=>{ qs("#q").value=""; load(); });
 
+qs("#profileSaveBtn").addEventListener("click", saveProfile);
 syncKeyUI();
+loadProfile();
 load();
 
 </script>
