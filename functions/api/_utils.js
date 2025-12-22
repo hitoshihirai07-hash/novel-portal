@@ -99,7 +99,17 @@ export async function ensureSchema(env) {
     await db.prepare(`ALTER TABLE novels ADD COLUMN is_adult INTEGER NOT NULL DEFAULT 0`).run();
   }
 
-  _schemaReady = true;
+  
+  // Add missing columns for users (profile)
+  const uinfo = await db.prepare(`PRAGMA table_info(users)`).all();
+  const ucols = (uinfo.results || []).map(r => r.name);
+  if (!ucols.includes("bio")) {
+    await db.prepare(`ALTER TABLE users ADD COLUMN bio TEXT`).run();
+  }
+  if (!ucols.includes("links")) {
+    await db.prepare(`ALTER TABLE users ADD COLUMN links TEXT`).run();
+  }
+_schemaReady = true;
 }
 
 export async function requireEdit(request, env) {

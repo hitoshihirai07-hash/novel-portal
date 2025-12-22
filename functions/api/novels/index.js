@@ -12,7 +12,7 @@ export async function onRequestGet({ request, env }) {
 
     const sql = `
       SELECT n.id, n.title, n.summary, n.status, n.is_adult, n.updated_at, n.published_at,
-             u.name AS author_name
+             u.id AS author_id, u.id AS author_id, u.name AS author_name
       FROM novels n
       JOIN users u ON u.id = n.author_id
       WHERE n.status = 'published'

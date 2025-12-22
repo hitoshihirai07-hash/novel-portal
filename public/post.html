@@ -4,7 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Novel Portal</title>
-  <link rel="icon" href="/favicon.svg" />
+  
+  <meta property="og:title" content="Novel Portal - 投稿">
+  <meta property="og:description" content="作品作成と章の投稿">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Novel Portal">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Novel Portal - 投稿">
+  <meta name="twitter:description" content="作品作成と章の投稿">
+<link rel="icon" href="/favicon.svg" />
   <link rel="stylesheet" href="/assets/style.css" />
 </head>
 <body>
@@ -111,6 +119,22 @@
 
 import { qs, apiGet, apiPost, showMsg, setBusy, getEditKey, setEditKey, editHeaders } from "/assets/app.js";
 
+let existingNumbers = new Set();
+
+async function loadMyChapters(novel_id){
+  existingNumbers = new Set();
+  if (!novel_id) return;
+  try{
+    const data = await apiGet(`/api/novels/${encodeURIComponent(novel_id)}/chapters`, editHeaders());
+    for (const c of (data.items||[])){
+      existingNumbers.add(Number(c.number));
+    }
+  }catch(_){
+    // ignore
+  }
+}
+
+
 function syncKeyUI(){
   const t = getEditKey();
   qs("#editKey").value = t;
@@ -150,6 +174,7 @@ async function createNovel(){
     qs("#newSummary").value = "";
     qs("#newAdult").checked = false;
     await loadMyNovels();
+    await loadMyChapters(Number(qs("#targetNovel").value));
   }catch(e){
     showMsg("#msg", e.message || "作成失敗", true);
   }finally{
@@ -170,7 +195,12 @@ async function upsertChapter(){
     const number = Number(qs("#chNumber").value);
     const title = qs("#chTitle").value.trim();
     const content = qs("#chContent").value;
-    await apiPost(`/api/novels/${encodeURIComponent(novel_id)}/chapters`, { number, title, content }, editHeaders());
+    if (existingNumbers.has(number)) {
+      if (!confirm(`第${number}話は既に存在します。上書きしますか？`)) return;
+    }
+    const r = await apiPost(`/api/novels/${encodeURIComponent(novel_id)}/chapters`, { number, title, content }, editHeaders());
+    showMsg("#msg", r.updated ? `第${number}話を更新しました` : `第${number}話を追加しました`, false);
+    await loadMyChapters(novel_id);
   }catch(e){
     showMsg("#msg", e.message || "失敗", true);
   }finally{
@@ -189,6 +219,7 @@ qs("#clearKeyBtn").addEventListener("click", ()=>{
 });
 qs("#refreshBtn").addEventListener("click", ()=>loadMyNovels().catch(e=>showMsg("#msg", e.message, true)));
 qs("#createNovelBtn").addEventListener("click", createNovel);
+qs("#targetNovel").addEventListener("change", ()=>loadMyChapters(Number(qs("#targetNovel").value)));
 qs("#upsertBtn").addEventListener("click", upsertChapter);
 
 syncKeyUI();

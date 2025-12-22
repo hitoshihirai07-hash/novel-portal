@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Novel Portal - 作者</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.svg">
+  <link rel="stylesheet" href="/assets/style.css">
+  <meta property="og:title" content="Novel Portal - 作者">
+  <meta property="og:description" content="作者ページ">
+  <meta property="og:type" content="profile">
+  <meta property="og:site_name" content="Novel Portal">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Novel Portal - 作者">
+  <meta name="twitter:description" content="作者ページ">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/">Novel Portal</a>
+    <nav class="nav">
+      <a href="/">一覧</a>
+      <a href="/post.html">投稿</a>
+      <a href="/my.html">マイページ</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card">
+    <h2 id="name" style="margin:0 0 6px">…</h2>
+    <p id="bio" class="notice" style="white-space:pre-wrap;margin:0 0 10px;display:none"></p>
+    <div id="links" class="row" style="gap:8px;flex-wrap:wrap;display:none"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h3 style="margin:0">公開作品</h3>
+      <span id="count" class="notice"></span>
+    </div>
+    <div id="list" class="list" style="margin-top:10px"></div>
+    <div id="empty" class="notice" style="display:none;margin-top:8px">公開作品はありません。</div>
+  </div>
+
+  <div id="msg" class="msg" style="display:none"></div>
+</main>
+
+<div class="footer">© Novel Portal</div>
+
+<script type="module">
+import { qs, apiGet, escapeHtml, showMsg } from "/assets/app.js";
+
+const url = new URL(location.href);
+const id = url.searchParams.get("id");
+if (!id) {
+  showMsg("#msg","idがありません", true);
+} else {
+  load().catch(e=>showMsg("#msg", e.message || "読み込み失敗", true));
+}
+
+function badgeAdult(n) {
+  return n.is_adult ? `<span class="badge">R18</span>` : ``;
+}
+
+async function load() {
+  const data = await apiGet(`/api/users/${encodeURIComponent(id)}`);
+  const u = data.user;
+  const items = data.items || [];
+  qs("#name").textContent = u.name || "作者";
+  if (u.bio) {
+    const b = qs("#bio");
+    b.style.display = "block";
+    b.textContent = u.bio;
+  }
+  if (u.links && u.links.length) {
+    const box = qs("#links");
+    box.style.display = "flex";
+    box.innerHTML = u.links.map(h=>{
+      let label = "リンク";
+      try{ label = new URL(h).hostname.replace(/^www\./,""); }catch(_){ }
+      return `<a class="btn secondary" href="${escapeHtml(h)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+    }).join("");
+  }
+  qs("#count").textContent = `${items.length}件`;
+  const list = qs("#list");
+  list.innerHTML = items.map(n=>`
+    <div class="item">
+      <div class="row" style="justify-content:space-between;gap:10px">
+        <a class="item-title" href="/novel.html?id=${n.id}">${escapeHtml(n.title)}</a>
+        ${badgeAdult(n)}
+      </div>
+      <div class="notice">${escapeHtml(n.summary || "")}</div>
+      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px">
+        <a class="btn secondary" href="/novel.html?id=${n.id}">目次</a>
+      </div>
+    </div>
+  `).join("");
+  qs("#empty").style.display = items.length ? "none" : "block";
+}
+</script>
+</body>
+</html>

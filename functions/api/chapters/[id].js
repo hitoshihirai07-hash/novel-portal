@@ -11,7 +11,7 @@ export async function onRequestGet({ params, env }) {
 
     const row = await env.DB.prepare(
       `SELECT c.id, c.number, c.title, c.content,
-              n.id AS novel_id, n.title AS novel_title, n.status, n.is_adult, u.name AS author_name
+              n.id AS novel_id, n.title AS novel_title, n.status, n.is_adult, u.id AS author_id, u.name AS author_name
        FROM chapters c
        JOIN novels n ON n.id = c.novel_id
        JOIN users u ON u.id = n.author_id
@@ -32,7 +32,7 @@ export async function onRequestGet({ params, env }) {
 
     return json({
       ok:true,
-      novel: { id: row.novel_id, title: row.novel_title, author_name: row.author_name || "", is_adult: !!row.is_adult },
+      novel: { id: row.novel_id, title: row.novel_title, author_id: row.author_id, author_name: row.author_name || "", is_adult: !!row.is_adult },
       chapter: { id: row.id, number: row.number, title: row.title, content: row.content },
       prev_id: prev?.id || null,
       next_id: next?.id || null

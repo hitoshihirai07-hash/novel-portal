@@ -1,5 +1,28 @@
 import { json, badRequest, readJson, clampStr, getIdFromParams, getNowMs, safe, requireDb, ensureSchema, requireEdit } from "../../_utils.js";
 
+export async function onRequestGet({ request, params, env }) {
+  return safe(async ()=>{
+    const d = requireDb(env);
+    if (!d.ok) return d.res;
+    await ensureSchema(env);
+
+    const auth = await requireEdit(request, env);
+    if (!auth.ok) return auth.res;
+
+    const novel_id = getIdFromParams(params, "id");
+    if (!novel_id) return badRequest("invalid id");
+
+    const owns = await env.DB.prepare(`SELECT id FROM novels WHERE id = ? AND author_id = ? LIMIT 1`).bind(novel_id, auth.user.id).first();
+    if (!owns) return badRequest("not found", 404);
+
+    const rows = await env.DB.prepare(
+      `SELECT id, number, title, updated_at FROM chapters WHERE novel_id = ? ORDER BY number ASC`
+    ).bind(novel_id).all();
+
+    return json({ ok:true, items: rows.results || [] });
+  });
+}
+
 export async function onRequestPost({ request, params, env }) {
   return safe(async ()=>{
     const d = requireDb(env);
