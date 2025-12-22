@@ -1,0 +1,8 @@
+{
+  "name": "novel-portal-min",
+  "private": true,
+  "devDependencies": { "wrangler": "^3.95.0" },
+  "scripts": {
+    "dev": "wrangler pages dev public --compatibility-date=2025-12-01"
+  }
+}

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Novel Portal</title>
+  <link rel="icon" href="/favicon.svg" />
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>Novel Portal</h1>
+      <small>最小構成</small>
+    </div>
+    <nav>
+      <a href="/">トップ</a>
+      <a href="/post.html">投稿</a>
+      <a href="/my.html">マイページ</a>
+      <a href="/mypage_create.html">マイページ作成</a>
+    </nav>
+  </div>
+</header>
+<main>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:flex-end">
+    <div>
+      <h2 style="margin:0 0 6px">公開作品</h2>
+      <div class="notice" id="msg" style="display:none"></div>
+    </div>
+    <a class="btn" href="/post.html">投稿する</a>
+  </div>
+  <hr />
+  <div class="grid two">
+    <div>
+      <label>検索（タイトル / 概要）</label>
+      <input id="q" placeholder="例：野球 / 旅 / 恋愛 …" />
+    </div>
+    <div>
+      <label> </label>
+      <input value="公開のみ表示" disabled />
+    </div>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <button class="btn" id="searchBtn">検索</button>
+    <button class="btn secondary" id="clearBtn">クリア</button>
+  </div>
+</div>
+
+<div style="height:12px"></div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h3 style="margin:0">一覧</h3>
+    <span class="badge" id="count">0</span>
+  </div>
+  <div style="height:10px"></div>
+  <div id="list" class="list"></div>
+</div>
+
+</main>
+<div class="footer">© Novel Portal</div>
+<script type="module">
+
+import { qs, apiGet, fmtDate, escapeHtml, setBusy, showMsg } from "/assets/app.js";
+
+async function load(){
+  showMsg("#msg", "");
+  const q = qs("#q").value.trim();
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+
+  const btn = qs("#searchBtn");
+  setBusy(btn, true);
+  try{
+    const data = await apiGet(`/api/novels?${params.toString()}`);
+    render(data.items || []);
+  }catch(e){
+    showMsg("#msg", e.message || "取得に失敗しました", true);
+    render([]);
+  }finally{
+    setBusy(btn, false, "検索");
+  }
+}
+
+function render(items){
+  qs("#count").textContent = String(items.length);
+  const list = qs("#list");
+  list.innerHTML = "";
+  if (!items.length){
+    list.innerHTML = `<div class="notice">表示できる作品がありません。</div>`;
+    return;
+  }
+  for (const n of items){
+    const el = document.createElement("div");
+    el.className = "item";
+    el.innerHTML = `
+      <div class="row" style="justify-content:space-between;gap:10px">
+        <div class="item-title">${escapeHtml(n.title)}</div>
+        ${n.is_adult ? `<span class="badge">R18</span>` : ``}
+      </div>
+      <div class="item-meta">
+        <span>公開: ${escapeHtml(fmtDate(n.published_at))}</span>
+        <span>更新: ${escapeHtml(fmtDate(n.updated_at))}</span>
+      </div>
+      <div class="notice">${escapeHtml(n.summary || "")}</div>
+      <div class="row">
+        <a class="btn" href="/novel.html?id=${encodeURIComponent(n.id)}">目次を見る</a>
+      </div>
+    `;
+    list.appendChild(el);
+  }
+}
+
+qs("#searchBtn").addEventListener("click", load);
+qs("#clearBtn").addEventListener("click", ()=>{ qs("#q").value=""; load(); });
+load();
+
+</script>
+</body>
+</html>

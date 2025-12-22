@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Novel Portal</title>
+  <link rel="icon" href="/favicon.svg" />
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>Novel Portal</h1>
+      <small>最小構成</small>
+    </div>
+    <nav>
+      <a href="/">トップ</a>
+      <a href="/post.html">投稿</a>
+      <a href="/my.html">マイページ</a>
+      <a href="/mypage_create.html">マイページ作成</a>
+    </nav>
+  </div>
+</header>
+<main>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:flex-end">
+    <div>
+      <h2 style="margin:0 0 6px">投稿</h2>
+      <div class="notice" id="msg" style="display:none"></div>
+    </div>
+    <span class="badge" id="state">未設定</span>
+  </div>
+  <hr />
+  <div class="grid two">
+    <div>
+      <label>編集キー</label>
+      <input id="editKey" placeholder="編集キー" />
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="saveKeyBtn">保存</button>
+        <button class="btn secondary" id="clearKeyBtn">削除</button>
+        <button class="btn secondary" id="refreshBtn">更新</button>
+      </div>
+    </div>
+    <div>
+      <label>対象作品</label>
+      <select id="targetNovel"></select>
+    </div>
+  </div>
+</div>
+
+<div style="height:12px"></div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h3 style="margin:0">作品を作成</h3>
+    <span class="badge">draft</span>
+  </div>
+  <div class="grid" style="margin-top:10px">
+    <div>
+      <label>タイトル</label>
+      <input id="newTitle" placeholder="作品タイトル" />
+    </div>
+    <div>
+      <label>概要</label>
+      <textarea id="newSummary" placeholder="短いあらすじ"></textarea>
+    </div>
+    <div>
+      <label>対象</label>
+      <div class="row" style="align-items:center">
+        <input id="newAdult" type="checkbox" style="width:auto;margin:0 8px 0 0" />
+        <span class="notice">18歳以上向け</span>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="createNovelBtn">作成</button>
+    </div>
+  </div>
+</div>
+
+<div style="height:12px"></div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h3 style="margin:0">章を追加 / 更新</h3>
+    <span class="badge">upsert</span>
+  </div>
+  <div class="grid two" style="margin-top:12px">
+    <div>
+      <label>話数</label>
+      <input id="chNumber" type="number" min="1" value="1" />
+    </div>
+    <div>
+      <label>章タイトル</label>
+      <input id="chTitle" placeholder="第1話" />
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <label>本文</label>
+    <textarea id="chContent" placeholder="本文"></textarea>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button class="btn" id="upsertBtn">追加/更新</button>
+  </div>
+</div>
+
+</main>
+<div class="footer">© Novel Portal</div>
+<script type="module">
+
+import { qs, apiGet, apiPost, showMsg, setBusy, getEditKey, setEditKey, editHeaders } from "/assets/app.js";
+
+function syncKeyUI(){
+  const t = getEditKey();
+  qs("#editKey").value = t;
+  qs("#state").textContent = t ? "設定済み" : "未設定";
+}
+
+async function loadMyNovels(){
+  showMsg("#msg", "");
+  const data = await apiGet(`/api/novels/mine`, editHeaders());
+  const items = data.items || [];
+  const sel = qs("#targetNovel");
+  sel.innerHTML = "";
+  for (const n of items){
+    const opt = document.createElement("option");
+    opt.value = n.id;
+    opt.textContent = `#${n.id} ${n.title}`;
+    sel.appendChild(opt);
+  }
+  if (!items.length){
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "（作品がありません）";
+    sel.appendChild(opt);
+  }
+}
+
+async function createNovel(){
+  showMsg("#msg", "");
+  const btn = qs("#createNovelBtn");
+  setBusy(btn, true);
+  try{
+    const title = qs("#newTitle").value.trim();
+    const summary = qs("#newSummary").value.trim();
+    const is_adult = !!qs("#newAdult").checked;
+    await apiPost("/api/novels", { title, summary, is_adult }, editHeaders());
+    qs("#newTitle").value = "";
+    qs("#newSummary").value = "";
+    qs("#newAdult").checked = false;
+    await loadMyNovels();
+  }catch(e){
+    showMsg("#msg", e.message || "作成失敗", true);
+  }finally{
+    setBusy(btn, false, "作成");
+  }
+}
+
+async function upsertChapter(){
+  showMsg("#msg", "");
+  const novel_id = Number(qs("#targetNovel").value);
+  if (!novel_id){
+    showMsg("#msg", "対象作品を選択してください", true);
+    return;
+  }
+  const btn = qs("#upsertBtn");
+  setBusy(btn, true);
+  try{
+    const number = Number(qs("#chNumber").value);
+    const title = qs("#chTitle").value.trim();
+    const content = qs("#chContent").value;
+    await apiPost(`/api/novels/${encodeURIComponent(novel_id)}/chapters`, { number, title, content }, editHeaders());
+  }catch(e){
+    showMsg("#msg", e.message || "失敗", true);
+  }finally{
+    setBusy(btn, false, "追加/更新");
+  }
+}
+
+qs("#saveKeyBtn").addEventListener("click", ()=>{
+  setEditKey(qs("#editKey").value.trim());
+  syncKeyUI();
+  loadMyNovels().catch(e=>showMsg("#msg", e.message, true));
+});
+qs("#clearKeyBtn").addEventListener("click", ()=>{
+  setEditKey("");
+  syncKeyUI();
+});
+qs("#refreshBtn").addEventListener("click", ()=>loadMyNovels().catch(e=>showMsg("#msg", e.message, true)));
+qs("#createNovelBtn").addEventListener("click", createNovel);
+qs("#upsertBtn").addEventListener("click", upsertChapter);
+
+syncKeyUI();
+loadMyNovels().catch(()=>{});
+
+</script>
+</body>
+</html>

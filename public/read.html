@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Novel Portal</title>
+  <link rel="icon" href="/favicon.svg" />
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>Novel Portal</h1>
+      <small>最小構成</small>
+    </div>
+    <nav>
+      <a href="/">トップ</a>
+      <a href="/post.html">投稿</a>
+      <a href="/my.html">マイページ</a>
+      <a href="/mypage_create.html">マイページ作成</a>
+    </nav>
+  </div>
+</header>
+<main>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div>
+      <h2 id="ctitle" style="margin:0 0 6px">…</h2>
+      <div class="item-meta">
+        <span>作品: <a id="novelLink" href="#" class="kbd">…</a></span>
+      </div>
+      <div class="notice" id="msg" style="display:none"></div>
+    </div>
+    <a class="btn secondary" id="tocLink" href="#">目次へ</a>
+  </div>
+  <hr />
+  <div class="row" style="justify-content:space-between">
+    <a class="btn secondary" id="prevBtn" href="#">← 前</a>
+    <a class="btn secondary" id="nextBtn" href="#">次 →</a>
+  </div>
+</div>
+
+<div style="height:12px"></div>
+
+<div class="card">
+  <pre class="read" id="content">…</pre>
+</div>
+
+</main>
+<div id="ageGate" style="display:none" class="modal-backdrop">
+  <div class="modal">
+    <h3>年齢確認</h3>
+    <p class="notice">この作品は18歳以上向けです。18歳以上の方のみ閲覧してください。</p>
+    <div class="row">
+      <a class="btn secondary" id="ageBack" href="/">戻る</a>
+      <button class="btn" id="ageOk">18歳以上です</button>
+    </div>
+  </div>
+</div>
+<div class="footer">© Novel Portal</div>
+<script type="module">
+
+import { qs, apiGet, showMsg } from "/assets/app.js";
+
+const cid = new URLSearchParams(location.search).get("chapter");
+if (!cid) location.href = "/";
+
+async function load(){
+  showMsg("#msg", "");
+  try{
+    const data = await apiGet(`/api/chapters/${encodeURIComponent(cid)}`);
+    const c = data.chapter;
+    const novel = data.novel;
+
+    // age gate
+    if (novel.is_adult) {
+      const key = `np_adult_ok_${novel.id}`;
+      const ok = localStorage.getItem(key) === "1";
+      if (!ok) {
+        const gate = qs("#ageGate");
+        gate.style.display = "flex";
+        qs("#ageBack").href = `/novel.html?id=${encodeURIComponent(novel.id)}`;
+        qs("#ageOk").onclick = () => { localStorage.setItem(key, "1"); gate.style.display = "none"; };
+        return;
+      }
+    }
+
+    qs("#ctitle").textContent = `第${c.number}話：${c.title || ""}`;
+    qs("#content").textContent = c.content || "";
+
+    qs("#novelLink").textContent = novel.title || "";
+    qs("#novelLink").href = `/novel.html?id=${encodeURIComponent(novel.id)}`;
+    qs("#tocLink").href = `/novel.html?id=${encodeURIComponent(novel.id)}`;
+
+    if (data.prev_id){
+      qs("#prevBtn").href = `/read.html?chapter=${encodeURIComponent(data.prev_id)}`;
+      qs("#prevBtn").style.visibility = "visible";
+    }else{
+      qs("#prevBtn").style.visibility = "hidden";
+    }
+    if (data.next_id){
+      qs("#nextBtn").href = `/read.html?chapter=${encodeURIComponent(data.next_id)}`;
+      qs("#nextBtn").style.visibility = "visible";
+    }else{
+      qs("#nextBtn").style.visibility = "hidden";
+    }
+  }catch(e){
+    showMsg("#msg", e.message || "取得に失敗しました", true);
+    qs("#content").textContent = "";
+  }
+}
+load();
+
+</script>
+</body>
+</html>

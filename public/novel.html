@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Novel Portal</title>
+  <link rel="icon" href="/favicon.svg" />
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <h1>Novel Portal</h1>
+      <small>最小構成</small>
+    </div>
+    <nav>
+      <a href="/">トップ</a>
+      <a href="/post.html">投稿</a>
+      <a href="/my.html">マイページ</a>
+      <a href="/mypage_create.html">マイページ作成</a>
+    </nav>
+  </div>
+</header>
+<main>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px">
+        <h2 id="title" style="margin:0 0 6px">…</h2>
+        <span class="badge" id="adultBadge" style="display:none">R18</span>
+      </div>
+      <div class="item-meta">
+        <span>公開: <span id="published">…</span></span>
+        <span>更新: <span id="updated">…</span></span>
+      </div>
+      <div class="notice" id="msg" style="display:none"></div>
+    </div>
+    <a class="btn secondary" href="/">← 一覧へ</a>
+  </div>
+  <hr />
+  <div class="notice" id="summary">…</div>
+</div>
+
+<div style="height:12px"></div>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h3 style="margin:0">目次</h3>
+    <span class="badge" id="tocCount">0</span>
+  </div>
+  <div style="height:10px"></div>
+  <div id="toc" class="list"></div>
+</div>
+
+</main>
+<div class="footer">© Novel Portal</div>
+<script type="module">
+
+import { qs, apiGet, fmtDate, escapeHtml, showMsg } from "/assets/app.js";
+
+const id = new URLSearchParams(location.search).get("id");
+if (!id) location.href = "/";
+
+async function load(){
+  showMsg("#msg", "");
+  try{
+    const n = await apiGet(`/api/novels/${encodeURIComponent(id)}`);
+    qs("#title").textContent = n.title || "";
+    qs("#summary").textContent = n.summary || "";
+    qs("#adultBadge").style.display = n.is_adult ? "inline-flex" : "none";
+    qs("#published").textContent = fmtDate(n.published_at) || "-";
+    qs("#updated").textContent = fmtDate(n.updated_at) || "-";
+
+    const toc = await apiGet(`/api/novels/${encodeURIComponent(id)}/toc`);
+    renderToc(toc.items || []);
+  }catch(e){
+    showMsg("#msg", e.message || "取得に失敗しました", true);
+    renderToc([]);
+  }
+}
+
+function renderToc(items){
+  qs("#tocCount").textContent = String(items.length);
+  const toc = qs("#toc");
+  toc.innerHTML = "";
+  if (!items.length){
+    toc.innerHTML = `<div class="notice">表示できる章がありません。</div>`;
+    return;
+  }
+  for (const c of items){
+    const el = document.createElement("div");
+    el.className = "item";
+    el.innerHTML = `
+      <div class="item-title">第${c.number}話：${escapeHtml(c.title || "")}</div>
+      <div class="row">
+        <a class="btn" href="/read.html?chapter=${encodeURIComponent(c.id)}">読む</a>
+      </div>
+    `;
+    toc.appendChild(el);
+  }
+}
+
+load();
+
+</script>
+</body>
+</html>
