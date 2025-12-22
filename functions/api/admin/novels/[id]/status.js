@@ -1,8 +1,9 @@
-import { json, badRequest, safe, requireDb, ensureSchema, requireAdmin, readJson, getIdFromParams, getNowMs } from "../../../_utils.js";
-const ALLOWED = new Set(["draft","published","hidden"]);
+import { json, badRequest, readJson, getIdFromParams, getNowMs, safe, requireDb, ensureSchema, requireAdmin, logAudit } from "../../../_utils.js";
+
+const ALLOWED = new Set(["draft", "published", "hidden"]);
 
 export async function onRequestPost({ request, params, env }) {
-  return safe(async ()=>{
+  return safe(async () => {
     const d = requireDb(env);
     if (!d.ok) return d.res;
     await ensureSchema(env);
@@ -20,6 +21,8 @@ export async function onRequestPost({ request, params, env }) {
     if (!ALLOWED.has(status)) return badRequest("invalid status");
 
     const now = getNowMs();
+
+    // Keep published_at the first time it becomes published.
     await env.DB.prepare(
       `UPDATE novels
        SET status = ?, updated_at = ?,
@@ -27,6 +30,7 @@ export async function onRequestPost({ request, params, env }) {
        WHERE id = ?`
     ).bind(status, now, status, now, id).run();
 
-    return json({ ok:true });
+    await logAudit(env, "admin_novel_status", "novel", id, { status });
+    return json({ ok: true });
   });
 }

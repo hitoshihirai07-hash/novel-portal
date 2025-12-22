@@ -22,17 +22,19 @@
     </nav>
   </div>
 </header>
-<main>
+<main class="container">
 
 <div class="card">
-  <div class="row" style="justify-content:space-between;align-items:flex-end">
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
     <div>
       <h2 style="margin:0 0 6px">管理</h2>
       <div class="notice" id="msg" style="display:none"></div>
     </div>
     <span class="badge" id="adminState">未設定</span>
   </div>
-  <hr />
+
+  <div style="height:10px"></div>
+
   <div class="grid two">
     <div>
       <label>管理キー</label>
@@ -40,14 +42,16 @@
       <div class="row" style="margin-top:10px">
         <button class="btn" id="saveAdminBtn">保存</button>
         <button class="btn secondary" id="clearAdminBtn">削除</button>
-        <button class="btn secondary" id="reloadAdminBtn">再読込</button>
+        <button class="btn secondary" id="reloadBtn">再読込</button>
       </div>
     </div>
     <div>
-      <label>検索（タイトル / 概要）</label>
-      <input id="aq" placeholder="任意" />
-      <div class="row" style="margin-top:10px">
-        <button class="btn" id="searchAdminBtn">検索</button>
+      <label>メニュー</label>
+      <div class="row" style="flex-wrap:wrap; gap:8px">
+        <button class="btn secondary" data-tab="novels" id="tabNovels">作品</button>
+        <button class="btn secondary" data-tab="users" id="tabUsers">作者</button>
+        <button class="btn secondary" data-tab="audit" id="tabAudit">監査ログ</button>
+        <button class="btn secondary" data-tab="export" id="tabExport">エクスポート</button>
         <a class="btn secondary" href="/" rel="nofollow">トップへ</a>
       </div>
     </div>
@@ -56,119 +60,470 @@
 
 <div style="height:12px"></div>
 
-<div class="card">
+<div class="card" id="panel-novels">
   <div class="row" style="justify-content:space-between">
-    <h3 style="margin:0">作品一覧（全件）</h3>
+    <h3 style="margin:0">作品</h3>
+    <span class="badge" id="nCount">0</span>
+  </div>
+
+  <div style="height:10px"></div>
+
+  <div class="grid two">
+    <div>
+      <label>検索</label>
+      <input id="nq" placeholder="タイトル / 概要 / 作者 /（必要なら本文）" />
+      <div class="row" style="margin-top:8px; align-items:center">
+        <input type="checkbox" id="nBody" style="width:auto;margin:0 8px 0 0" />
+        <span class="notice">本文も検索</span>
+      </div>
+    </div>
+    <div>
+      <label>フィルタ</label>
+      <div class="grid two">
+        <div>
+          <select id="nStatus">
+            <option value="all">全ステータス</option>
+            <option value="published">公開</option>
+            <option value="draft">下書き</option>
+            <option value="hidden">非表示</option>
+          </select>
+        </div>
+        <div>
+          <select id="nAdult">
+            <option value="all">R18: 全部</option>
+            <option value="on">R18: ON</option>
+            <option value="off">R18: OFF</option>
+          </select>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+      <label>作者（任意）</label>
+      <input id="nAuthor" placeholder="作者名で絞る" />
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:12px">
+    <button class="btn" id="nSearchBtn">検索</button>
+    <button class="btn secondary" id="nResetBtn">リセット</button>
+  </div>
+
+  <div style="height:10px"></div>
+  <div id="nList" class="list"></div>
+</div>
+
+<div class="card" id="panel-users" style="display:none">
+  <div class="row" style="justify-content:space-between">
+    <h3 style="margin:0">作者</h3>
+    <span class="badge" id="uCount">0</span>
+  </div>
+
+  <div style="height:10px"></div>
+
+  <div class="grid two">
+    <div>
+      <label>検索（作者名）</label>
+      <input id="uq" placeholder="任意" />
+    </div>
+    <div>
+      <label>状態</label>
+      <select id="uDisabled">
+        <option value="all">全部</option>
+        <option value="off">有効のみ</option>
+        <option value="on">無効のみ</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:12px">
+    <button class="btn" id="uSearchBtn">検索</button>
+  </div>
+
+  <div style="height:10px"></div>
+  <div id="uList" class="list"></div>
+</div>
+
+<div class="card" id="panel-audit" style="display:none">
+  <div class="row" style="justify-content:space-between">
+    <h3 style="margin:0">監査ログ</h3>
     <span class="badge" id="aCount">0</span>
   </div>
+
+  <div style="height:10px"></div>
+
+  <div class="grid two">
+    <div>
+      <label>検索（任意）</label>
+      <input id="aq" placeholder="action / meta など" />
+    </div>
+    <div>
+      <label>件数</label>
+      <select id="aLimit">
+        <option value="200">200</option>
+        <option value="500">500</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:12px">
+    <button class="btn" id="aReloadBtn">再読込</button>
+  </div>
+
   <div style="height:10px"></div>
   <div id="aList" class="list"></div>
 </div>
 
+<div class="card" id="panel-export" style="display:none">
+  <h3 style="margin:0">エクスポート</h3>
+  <div style="height:10px"></div>
+  <div class="row" style="align-items:center">
+    <input type="checkbox" id="exContent" style="width:auto;margin:0 8px 0 0" />
+    <span class="notice">本文も含める（重い）</span>
+  </div>
+  <div style="height:10px"></div>
+  <div class="row" style="flex-wrap:wrap; gap:8px">
+    <button class="btn" data-ex="all">全データ</button>
+    <button class="btn secondary" data-ex="novels">作品＋目次</button>
+    <button class="btn secondary" data-ex="users">作者</button>
+    <button class="btn secondary" data-ex="audit">監査ログ</button>
+  </div>
+</div>
+
 </main>
+
 <div class="footer">© Novel Portal</div>
 <script type="module">
-
 import { qs, adminHeaders, setAdminKey, getAdminKey, showMsg, escapeHtml, fmtDate } from "/assets/app.js";
 
-function sync(){
+function setState(){
   const t = getAdminKey();
-  qs("#adminKey").value = t;
+  qs("#adminKey").value = t || "";
   qs("#adminState").textContent = t ? "設定済み" : "未設定";
 }
 
-async function load(){
-  showMsg("#msg", "");
-  const t = getAdminKey();
-  const list = qs("#aList");
-  if (!t){
-    list.innerHTML = `<div class="notice"> </div>`;
-    qs("#aCount").textContent = "0";
-    return;
-  }
-  const q = qs("#aq").value.trim();
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
+function msg(text){
+  if (!text) { showMsg("#msg", ""); return; }
+  showMsg("#msg", text, true);
+}
 
-  const res = await fetch(`/api/admin/novels?${params.toString()}`, { headers: adminHeaders() });
-  const data = await res.json().catch(()=>({error:"JSON parse error"}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-
-  const items = data.items || [];
-  qs("#aCount").textContent = String(items.length);
-  list.innerHTML = "";
-  if (!items.length){
-    list.innerHTML = `<div class="notice">該当なし</div>`;
-    return;
-  }
-  for (const n of items){
-    const el = document.createElement("div");
-    el.className = "item";
-    el.innerHTML = `
-      <div class="item-title">#${n.id} ${escapeHtml(n.title)}</div>
-      <div class="item-meta">
-        <span>status: <span class="kbd">${escapeHtml(n.status)}</span></span>
-        <span>R18: <span class="kbd">${n.is_adult ? "ON" : "OFF"}</span></span>
-        <span>公開: ${escapeHtml(fmtDate(n.published_at))}</span>
-        <span>更新: ${escapeHtml(fmtDate(n.updated_at))}</span>
-      </div>
-      <div class="notice">${escapeHtml(n.summary || "")}</div>
-      <div class="row">
-        <a class="btn secondary" href="/novel.html?id=${encodeURIComponent(n.id)}" target="_blank" rel="noopener">開く</a>
-        <button class="btn secondary" data-act="draft" data-id="${n.id}">下書き</button>
-        <button class="btn secondary" data-act="published" data-id="${n.id}">公開</button>
-        <button class="btn secondary" data-act="hidden" data-id="${n.id}">非表示</button>
-        <button class="btn secondary" data-act="adult_on" data-id="${n.id}">R18</button>
-        <button class="btn secondary" data-act="adult_off" data-id="${n.id}">全年齢</button>
-      </div>
-    `;
-    el.addEventListener("click", async (ev)=>{
-      const b = ev.target.closest("button[data-act]");
-      if (!b) return;
-      showMsg("#msg", "");
-      try{
-        if (b.dataset.act === "adult_on" || b.dataset.act === "adult_off") {
-          await setAdult(b.dataset.id, b.dataset.act === "adult_on");
-        } else {
-          await setStatus(b.dataset.id, b.dataset.act);
-        }
-        await load();
-      }catch(e){
-        showMsg("#msg", e.message || "失敗", true);
-      }
-    });
-    list.appendChild(el);
+function activeTabName(){
+  return localStorage.getItem("np_admin_tab") || "novels";
+}
+function setTab(name){
+  localStorage.setItem("np_admin_tab", name);
+  for (const el of ["novels","users","audit","export"]) {
+    qs(`#panel-${el}`).style.display = (el === name) ? "block" : "none";
   }
 }
 
-async function setAdult(id, is_adult){
-  const res = await fetch(`/api/admin/novels/${encodeURIComponent(id)}/adult`, {
+function requireAdminKey(){
+  const t = getAdminKey();
+  if (!t) throw new Error("管理キーが未設定です");
+  return t;
+}
+
+async function apiGet(path){
+  requireAdminKey();
+  const res = await fetch(path, { headers: adminHeaders() });
+  const data = await res.json().catch(()=>({ error:"JSON parse error" }));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+async function apiPost(path, body){
+  requireAdminKey();
+  const res = await fetch(path, {
     method:"POST",
     headers: { "Content-Type":"application/json", ...adminHeaders() },
-    body: JSON.stringify({ is_adult })
+    body: JSON.stringify(body || {})
   });
-  const data = await res.json().catch(()=>({error:"JSON parse error"}));
+  const data = await res.json().catch(()=>({ error:"JSON parse error" }));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function badgeStatus(status){
+  if (status === "published") return "公開";
+  if (status === "draft") return "下書き";
+  if (status === "hidden") return "非表示";
+  return status || "-";
+}
+
+function renderNovels(items){
+  const el = qs("#nList");
+  qs("#nCount").textContent = String(items.length);
+  if (!items.length){
+    el.innerHTML = `<div class="notice">該当なし</div>`;
+    return;
+  }
+  el.innerHTML = items.map(n=>{
+    const r18 = n.is_adult ? "R18" : "全年齢";
+    const ch = Number(n.chapters_count || 0);
+    return `
+      <div class="item">
+        <div class="row" style="justify-content:space-between;gap:10px">
+          <div class="item-title">${escapeHtml(n.title)} ${n.is_adult ? `<span class="badge">R18</span>` : ``}</div>
+          <span class="kbd">#${n.id}</span>
+        </div>
+        <div class="item-meta">
+          <span>作者: <span class="kbd">${escapeHtml(n.author_name || "-")}</span></span>
+          <span>status: <span class="kbd">${escapeHtml(badgeStatus(n.status))}</span></span>
+          <span>R18: <span class="kbd">${escapeHtml(r18)}</span></span>
+          <span>章: <span class="kbd">${ch}</span></span>
+          <span>更新: <span class="kbd">${fmtDate(n.updated_at)}</span></span>
+        </div>
+        <div class="item-meta">${escapeHtml(n.summary || "")}</div>
+        <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px">
+          <button class="btn secondary" data-act="published" data-id="${n.id}">公開</button>
+          <button class="btn secondary" data-act="draft" data-id="${n.id}">下書き</button>
+          <button class="btn secondary" data-act="hidden" data-id="${n.id}">非表示</button>
+          <button class="btn secondary" data-act="adult_on" data-id="${n.id}">R18</button>
+          <button class="btn secondary" data-act="adult_off" data-id="${n.id}">全年齢</button>
+          <a class="btn secondary" href="/novel.html?id=${encodeURIComponent(n.id)}" target="_blank" rel="nofollow">目次</a>
+          <button class="btn danger" data-act="delete" data-id="${n.id}">削除</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadNovels(){
+  msg("");
+  const q = qs("#nq").value.trim();
+  const status = qs("#nStatus").value;
+  const adult = qs("#nAdult").value;
+  const author = qs("#nAuthor").value.trim();
+  const body = qs("#nBody").checked ? "1" : "0";
+  const url = new URL("/api/admin/novels", location.origin);
+  if (q) url.searchParams.set("q", q);
+  if (status && status !== "all") url.searchParams.set("status", status);
+  if (adult && adult !== "all") url.searchParams.set("adult", adult);
+  if (author) url.searchParams.set("author", author);
+  if (body === "1") url.searchParams.set("body", "1");
+  const data = await apiGet(url.toString());
+  renderNovels(data.items || []);
 }
 
 async function setStatus(id, status){
-  const res = await fetch(`/api/admin/novels/${encodeURIComponent(id)}/status`, {
-    method:"POST",
-    headers: { "Content-Type":"application/json", ...adminHeaders() },
-    body: JSON.stringify({ status })
-  });
-  const data = await res.json().catch(()=>({error:"JSON parse error"}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  await apiPost(`/api/admin/novels/${encodeURIComponent(id)}/status`, { status });
+}
+async function setAdult(id, is_adult){
+  await apiPost(`/api/admin/novels/${encodeURIComponent(id)}/adult`, { is_adult });
+}
+async function delNovel(id){
+  await apiPost(`/api/admin/novels/${encodeURIComponent(id)}/delete`, {});
 }
 
-qs("#saveAdminBtn").addEventListener("click", ()=>{ setAdminKey(qs("#adminKey").value.trim()); sync(); load().catch(e=>showMsg("#msg", e.message, true)); });
-qs("#clearAdminBtn").addEventListener("click", ()=>{ setAdminKey(""); sync(); });
-qs("#reloadAdminBtn").addEventListener("click", ()=>{ sync(); load().catch(e=>showMsg("#msg", e.message, true)); });
-qs("#searchAdminBtn").addEventListener("click", ()=>{ load().catch(e=>showMsg("#msg", e.message, true)); });
+qs("#nList").addEventListener("click", async (e)=>{
+  const b = e.target.closest("button");
+  if (!b) return;
+  const id = b.dataset.id;
+  const act = b.dataset.act;
+  try{
+    if (act === "delete") {
+      if (!confirm("この作品を削除しますか？（元に戻せません）")) return;
+      await delNovel(id);
+    } else if (act === "adult_on" || act === "adult_off") {
+      await setAdult(id, act === "adult_on");
+    } else {
+      await setStatus(id, act);
+    }
+    await loadNovels();
+  }catch(err){
+    msg(err.message || String(err));
+  }
+});
 
-sync();
-load().catch(()=>{});
+function renderUsers(items){
+  const el = qs("#uList");
+  qs("#uCount").textContent = String(items.length);
+  if (!items.length){
+    el.innerHTML = `<div class="notice">該当なし</div>`;
+    return;
+  }
+  el.innerHTML = items.map(u=>{
+    const dis = u.is_disabled ? "無効" : "有効";
+    const last = u.last_updated_at ? fmtDate(u.last_updated_at) : "-";
+    return `
+      <div class="item">
+        <div class="row" style="justify-content:space-between;gap:10px">
+          <div class="item-title">${escapeHtml(u.name)}</div>
+          <span class="kbd">#${u.id}</span>
+        </div>
+        <div class="item-meta">
+          <span>状態: <span class="kbd">${escapeHtml(dis)}</span></span>
+          <span>作品: <span class="kbd">${Number(u.novels_count || 0)}</span></span>
+          <span>公開: <span class="kbd">${Number(u.published_count || 0)}</span></span>
+          <span>最終更新: <span class="kbd">${escapeHtml(last)}</span></span>
+        </div>
+        <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px">
+          <button class="btn secondary" data-uact="disable" data-uid="${u.id}">無効化</button>
+          <button class="btn secondary" data-uact="enable" data-uid="${u.id}">有効化</button>
+          <button class="btn secondary" data-uact="filter" data-uid="${u.id}" data-name="${escapeHtml(u.name)}">この作者の作品</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadUsers(){
+  msg("");
+  const q = qs("#uq").value.trim();
+  const disabled = qs("#uDisabled").value;
+  const url = new URL("/api/admin/users", location.origin);
+  if (q) url.searchParams.set("q", q);
+  if (disabled && disabled !== "all") url.searchParams.set("disabled", disabled);
+  const data = await apiGet(url.toString());
+  renderUsers(data.items || []);
+}
+
+async function setUserDisabled(uid, is_disabled){
+  await apiPost(`/api/admin/users/${encodeURIComponent(uid)}/disabled`, { is_disabled });
+}
+
+qs("#uList").addEventListener("click", async (e)=>{
+  const b = e.target.closest("button");
+  if (!b) return;
+  const uid = b.dataset.uid;
+  const act = b.dataset.uact;
+  try{
+    if (act === "disable") {
+      if (!confirm("この作者を無効化しますか？（作品は全て非表示になります）")) return;
+      await setUserDisabled(uid, true);
+      await loadUsers();
+      // refresh novels list if currently viewing
+    } else if (act === "enable") {
+      await setUserDisabled(uid, false);
+      await loadUsers();
+    } else if (act === "filter") {
+      setTab("novels");
+      qs("#nAuthor").value = b.dataset.name || "";
+      await loadNovels();
+    }
+  }catch(err){
+    msg(err.message || String(err));
+  }
+});
+
+function renderAudit(items){
+  const el = qs("#aList");
+  qs("#aCount").textContent = String(items.length);
+  if (!items.length){
+    el.innerHTML = `<div class="notice">なし</div>`;
+    return;
+  }
+  el.innerHTML = items.map(a=>{
+    const meta = a.meta ? escapeHtml(a.meta).slice(0, 2000) : "";
+    return `
+      <div class="item">
+        <div class="row" style="justify-content:space-between;gap:10px">
+          <div class="item-title">${escapeHtml(a.action)}</div>
+          <span class="kbd">${fmtDate(a.ts)}</span>
+        </div>
+        <div class="item-meta">
+          <span>target: <span class="kbd">${escapeHtml(a.target_type)}#${escapeHtml(String(a.target_id ?? "-"))}</span></span>
+          <span>actor: <span class="kbd">${escapeHtml(a.actor)}</span></span>
+          <span>id: <span class="kbd">#${escapeHtml(String(a.id))}</span></span>
+        </div>
+        ${meta ? `<div class="item-meta">${meta}</div>` : ``}
+      </div>
+    `;
+  }).join("");
+}
+
+async function loadAudit(){
+  msg("");
+  const q = qs("#aq").value.trim();
+  const limit = qs("#aLimit").value;
+  const url = new URL("/api/admin/audit", location.origin);
+  if (q) url.searchParams.set("q", q);
+  if (limit) url.searchParams.set("limit", limit);
+  const data = await apiGet(url.toString());
+  renderAudit(data.items || []);
+}
+
+function downloadExport(type){
+  requireAdminKey();
+  const content = qs("#exContent").checked ? "1" : "0";
+  const url = new URL("/api/admin/export", location.origin);
+  url.searchParams.set("type", type);
+  if (content === "1") url.searchParams.set("content", "1");
+  // open download
+  window.open(url.toString(), "_blank", "noopener,noreferrer");
+}
+
+document.querySelectorAll("[data-ex]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    try{ downloadExport(btn.dataset.ex); }catch(e){ msg(e.message || String(e)); }
+  });
+});
+
+qs("#saveAdminBtn").onclick = async ()=>{
+  setAdminKey(qs("#adminKey").value.trim());
+  setState();
+  try{
+    await loadNovels();
+  }catch(e){
+    msg(e.message || String(e));
+  }
+};
+qs("#clearAdminBtn").onclick = ()=>{
+  setAdminKey("");
+  setState();
+};
+qs("#reloadBtn").onclick = async ()=>{
+  setState();
+  try{
+    const tab = activeTabName();
+    if (tab === "users") await loadUsers();
+    else if (tab === "audit") await loadAudit();
+    else if (tab === "export") {/* no-op */}
+    else await loadNovels();
+  }catch(e){
+    msg(e.message || String(e));
+  }
+};
+
+qs("#nSearchBtn").onclick = ()=>loadNovels().catch(e=>msg(e.message || String(e)));
+qs("#nResetBtn").onclick = ()=>{
+  qs("#nq").value = "";
+  qs("#nBody").checked = false;
+  qs("#nStatus").value = "all";
+  qs("#nAdult").value = "all";
+  qs("#nAuthor").value = "";
+  loadNovels().catch(e=>msg(e.message || String(e)));
+};
+qs("#uSearchBtn").onclick = ()=>loadUsers().catch(e=>msg(e.message || String(e)));
+qs("#aReloadBtn").onclick = ()=>loadAudit().catch(e=>msg(e.message || String(e)));
+
+function hookTabs(){
+  const map = { novels:"#tabNovels", users:"#tabUsers", audit:"#tabAudit", export:"#tabExport" };
+  for (const [name, sel] of Object.entries(map)) {
+    qs(sel).onclick = async ()=>{
+      setTab(name);
+      try{
+        if (name === "novels") await loadNovels();
+        if (name === "users") await loadUsers();
+        if (name === "audit") await loadAudit();
+      }catch(e){ msg(e.message || String(e)); }
+    };
+  }
+}
+
+setState();
+hookTabs();
+setTab(activeTabName());
+try{
+  // initial load only if key exists
+  if (getAdminKey()){
+    const tab = activeTabName();
+    if (tab === "users") loadUsers();
+    else if (tab === "audit") loadAudit();
+    else if (tab === "novels") loadNovels();
+  }
+}catch(e){
+  msg(e.message || String(e));
+}
 
 </script>
+
 </body>
 </html>

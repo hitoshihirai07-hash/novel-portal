@@ -73,6 +73,17 @@ export async function ensureSchema(env) {
       FOREIGN KEY (novel_id) REFERENCES novels(id) ON DELETE CASCADE,
       UNIQUE (novel_id, number)
     );`,
+    `CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ts INTEGER NOT NULL,
+      actor TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id INTEGER,
+      meta TEXT
+    );`,
+    `CREATE INDEX IF NOT EXISTS idx_audit_ts ON audit_logs(ts);`,
+    `CREATE INDEX IF NOT EXISTS idx_audit_target ON audit_logs(target_type, target_id);`,
     `CREATE INDEX IF NOT EXISTS idx_novels_status_pub ON novels(status, published_at);`,
     `CREATE INDEX IF NOT EXISTS idx_novels_author_upd ON novels(author_id, updated_at);`,
     `CREATE INDEX IF NOT EXISTS idx_chapters_novel_num ON chapters(novel_id, number);`,
@@ -100,6 +111,18 @@ export async function requireEdit(request, env) {
   ).bind(keyHash).first();
   if (!u || u.is_disabled) return { ok:false, res: badRequest("unauthorized", 401) };
   return { ok:true, user: u };
+}
+
+export async function logAudit(env, action, target_type, target_id = null, meta = null, actor = "admin") {
+  try{
+    const ts = getNowMs();
+    const m = meta ? (typeof meta === "string" ? meta : JSON.stringify(meta)) : null;
+    await env.DB.prepare(
+      `INSERT INTO audit_logs (ts, actor, action, target_type, target_id, meta) VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(ts, actor, action, target_type, target_id, m).run();
+  }catch(_e){
+    // do not break main flow if audit fails
+  }
 }
 
 export function requireAdmin(request, env) {
