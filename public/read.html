@@ -30,6 +30,7 @@
       <h2 id="ctitle" style="margin:0 0 6px">…</h2>
       <div class="item-meta">
         <span>作品: <a id="novelLink" href="#" class="kbd">…</a></span>
+        <span>作者: <span id="authorName" class="kbd">…</span></span>
       </div>
       <div class="notice" id="msg" style="display:none"></div>
     </div>
@@ -91,6 +92,7 @@ async function load(){
     qs("#content").textContent = c.content || "";
 
     qs("#novelLink").textContent = novel.title || "";
+    qs("#authorName").textContent = novel.author_name || "";
     qs("#novelLink").href = `/novel.html?id=${encodeURIComponent(novel.id)}`;
     qs("#tocLink").href = `/novel.html?id=${encodeURIComponent(novel.id)}`;
 

@@ -32,6 +32,7 @@
         <span class="badge" id="adultBadge" style="display:none">R18</span>
       </div>
       <div class="item-meta">
+        <span>作者: <span id="author">…</span></span>
         <span>公開: <span id="published">…</span></span>
         <span>更新: <span id="updated">…</span></span>
       </div>
@@ -69,6 +70,7 @@ async function load(){
     const n = await apiGet(`/api/novels/${encodeURIComponent(id)}`);
     qs("#title").textContent = n.title || "";
     qs("#summary").textContent = n.summary || "";
+    qs("#author").textContent = n.author_name || "";
     qs("#adultBadge").style.display = n.is_adult ? "inline-flex" : "none";
     qs("#published").textContent = fmtDate(n.published_at) || "-";
     qs("#updated").textContent = fmtDate(n.updated_at) || "-";

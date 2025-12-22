@@ -10,9 +10,11 @@ export async function onRequestGet({ params, env }) {
     if (!id) return badRequest("invalid id");
 
     const n = await env.DB.prepare(
-      `SELECT id, title, summary, status, is_adult, updated_at, published_at
-       FROM novels
-       WHERE id = ? AND status = 'published'
+      `SELECT n.id, n.title, n.summary, n.status, n.is_adult, n.updated_at, n.published_at,
+              u.name AS author_name
+       FROM novels n
+       JOIN users u ON u.id = n.author_id
+       WHERE n.id = ? AND n.status = 'published'
        LIMIT 1`
     ).bind(id).first();
 

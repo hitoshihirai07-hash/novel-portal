@@ -11,9 +11,11 @@ export async function onRequestGet({ request, env }) {
     const like = q ? `%${q}%` : null;
 
     const sql = `
-      SELECT id, title, summary, status, is_adult, updated_at, published_at
-      FROM novels
-      WHERE status = 'published'
+      SELECT n.id, n.title, n.summary, n.status, n.is_adult, n.updated_at, n.published_at,
+             u.name AS author_name
+      FROM novels n
+      JOIN users u ON u.id = n.author_id
+      WHERE n.status = 'published'
         ${like ? "AND (title LIKE ? OR summary LIKE ?)" : ""}
       ORDER BY published_at DESC, updated_at DESC
       LIMIT 100
