@@ -100,7 +100,8 @@ async function load(){
     qs("#content").textContent = c.content || "";
 
     qs("#novelLink").textContent = novel.title || "";
-    qs("#authorName").textContent = novel.author_name || "";
+    qs("#authorLink").textContent = novel.author_name || "";
+    qs("#authorLink").href = `/author.html?id=${encodeURIComponent(novel.author_id)}`;
     qs("#novelLink").href = `/novel.html?id=${encodeURIComponent(novel.id)}`;
     qs("#tocLink").href = `/novel.html?id=${encodeURIComponent(novel.id)}`;
 
